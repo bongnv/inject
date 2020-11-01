@@ -93,3 +93,11 @@ func Test_MustGet_panic(t *testing.T) {
 		c.MustGet("some-dep")
 	}, "it must panic as there is no request dep")
 }
+
+func Test_MustGet_no_panic(t *testing.T) {
+	c := New()
+	c.MustRegister("mock-int", 10)
+	require.NotPanics(t, func() {
+		require.EqualValues(t, 10, c.MustGet("mock-int"))
+	}, "it must panic as there is no request dep")
+}
