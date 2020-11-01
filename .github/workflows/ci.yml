@@ -56,3 +56,22 @@ jobs:
         with:
           token:
           fail_ci_if_error: false
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+#    if: github.ref == 'refs/heads/main'
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - name: Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release -d --debug
