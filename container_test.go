@@ -78,3 +78,18 @@ func Test_Get(t *testing.T) {
 		require.Nil(t, dep)
 	})
 }
+
+func Test_MustRegister_panic(t *testing.T) {
+	c := New()
+	require.NoError(t, c.Register("mock-int", 10))
+	require.Panics(t, func() {
+		c.MustRegister("mock-int", 20)
+	})
+}
+
+func Test_MustGet_panic(t *testing.T) {
+	c := New()
+	require.Panics(t, func() {
+		c.MustGet("some-dep")
+	}, "it must panic as there is no request dep")
+}
