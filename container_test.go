@@ -16,7 +16,7 @@ type TypeB struct {
 
 func Test_Register(t *testing.T) {
 	t.Run("happy-path", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		a := &TypeA{}
 		b := &TypeB{}
 		require.NoError(t, c.Register("mocked-int", 10))
@@ -27,7 +27,7 @@ func Test_Register(t *testing.T) {
 	})
 
 	t.Run("not-assignable", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		a := &TypeA{}
 		require.NoError(t, c.Register("mocked-int", "1000"))
 		err := c.Register("type-a", a)
@@ -35,7 +35,7 @@ func Test_Register(t *testing.T) {
 	})
 
 	t.Run("missing-dependency", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		b := &TypeB{}
 		require.NoError(t, c.Register("mocked-int", "1000"))
 		err := c.Register("type-b", b)
@@ -43,7 +43,7 @@ func Test_Register(t *testing.T) {
 	})
 
 	t.Run("duplicate-registration", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		a := &TypeA{}
 		require.NoError(t, c.Register("type-a", 10))
 		err := c.Register("type-a", a)
@@ -51,7 +51,7 @@ func Test_Register(t *testing.T) {
 	})
 
 	t.Run("duplicate-registration", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		a := &TypeA{}
 		require.NoError(t, c.Register("type-a", 10))
 		err := c.Register("type-a", a)
@@ -61,7 +61,7 @@ func Test_Register(t *testing.T) {
 
 func Test_Get(t *testing.T) {
 	t.Run("happy-path", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		a := &TypeA{}
 		require.NoError(t, c.Register("mocked-int", 10))
 		require.NoError(t, c.Register("type-a", a))
@@ -72,7 +72,7 @@ func Test_Get(t *testing.T) {
 	})
 
 	t.Run("not-found", func(t *testing.T) {
-		c := &Container{}
+		c := New()
 		dep, err := c.Get("some-dep")
 		require.EqualError(t, err, "inject: the requested dependency couldn't be found")
 		require.Nil(t, dep)
