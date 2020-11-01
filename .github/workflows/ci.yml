@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - main
-  pull_request
+      - alpha
+  pull_request:
+    branches:
+      - main
+      - alpha
 env:
   GO111MODULE: on
 
