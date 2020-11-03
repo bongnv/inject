@@ -32,6 +32,14 @@ func (c *Container) Register(name string, dep interface{}) error {
 	return nil
 }
 
+// MustRegister is the similar to Register. Instead of returning an error,
+// it panics if anything goes wrong.
+func (c *Container) MustRegister(name string, dep interface{}) {
+	if err := c.Register(name, dep); err != nil {
+		panic(err)
+	}
+}
+
 // Get loads a dependency from the Container using name.
 // It returns an error if the requested dependency couldn't be found.
 func (c *Container) Get(name string) (interface{}, error) {
@@ -41,6 +49,17 @@ func (c *Container) Get(name string) (interface{}, error) {
 	}
 
 	return dep.value, nil
+}
+
+// MustGet is the similar to Get. Instead of returning an error,
+// it panics if anything goes wrong.
+func (c *Container) MustGet(name string) interface{} {
+	dep, err := c.Get(name)
+	if err != nil {
+		panic(err)
+	}
+
+	return dep
 }
 
 type dependency struct {
