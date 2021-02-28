@@ -18,17 +18,28 @@ func (c *Container) Register(name string, dep interface{}) error {
 		return fmt.Errorf("inject: %s is already registered", name)
 	}
 
-	newDep := &dependency{
-		value:        dep,
-		reflectType:  reflect.TypeOf(dep),
-		reflectValue: reflect.ValueOf(dep),
+	var toAddDep *dependency
+	depType := reflect.TypeOf(dep)
+	if depType.Kind() == reflect.Func {
+		createdDep, err := c.executeFunc(dep, depType)
+		if err != nil {
+			return err
+		}
+
+		toAddDep = createdDep
+	} else {
+		toAddDep = &dependency{
+			value:        dep,
+			reflectType:  depType,
+			reflectValue: reflect.ValueOf(dep),
+		}
 	}
 
-	if err := c.populate(newDep); err != nil {
+	if err := c.populate(toAddDep); err != nil {
 		return err
 	}
 
-	c.dependencies[name] = newDep
+	c.dependencies[name] = toAddDep
 	return nil
 }
 
@@ -62,12 +73,6 @@ func (c *Container) MustGet(name string) interface{} {
 	return dep
 }
 
-type dependency struct {
-	value        interface{}
-	reflectValue reflect.Value
-	reflectType  reflect.Type
-}
-
 func (c *Container) populate(dep *dependency) error {
 	if !isStructPtr(dep.reflectType) {
 		return nil
@@ -98,6 +103,70 @@ func (c *Container) populate(dep *dependency) error {
 	return nil
 }
 
-func isStructPtr(t reflect.Type) bool {
-	return t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct
+func (c *Container) executeFunc(fn interface{}, fnType reflect.Type) (*dependency, error) {
+	if fnType.NumOut() > 2 || fnType.NumOut() < 1 {
+		return nil, errors.New("inject: unsupported factory function")
+	}
+
+	if fnType.NumOut() == 2 && !implementsError(fnType.Out(1)) {
+		return nil, errors.New("inject: 2nd output param must implement error")
+	}
+
+	fnVal := reflect.ValueOf(fn)
+	inParams, err := c.generateInParams(fnType)
+	if err != nil {
+		return nil, err
+	}
+
+	out := fnVal.Call(inParams)
+	if len(out) == 2 && !out[1].IsNil() {
+		return nil, out[1].Interface().(error)
+	}
+
+	newDep := &dependency{
+		value:        out[0].Interface(),
+		reflectValue: out[0],
+		reflectType:  out[0].Type(),
+	}
+
+	return newDep, nil
+}
+
+func (c *Container) generateInParams(fnType reflect.Type) ([]reflect.Value, error) {
+	params := make([]reflect.Value, fnType.NumIn())
+	for i := 0; i < fnType.NumIn(); i++ {
+		param, err := c.findByType(fnType.In(i))
+		if err != nil {
+			return nil, err
+		}
+
+		params[i] = param.reflectValue
+	}
+
+	return params, nil
+}
+
+func (c *Container) findByType(t reflect.Type) (*dependency, error) {
+	var foundVal *dependency
+	for _, v := range c.dependencies {
+		if v.reflectType.AssignableTo(t) {
+			if foundVal != nil {
+				return nil, fmt.Errorf("inject: there is a conflict when finding the dependency for %s", t.String())
+			}
+
+			foundVal = v
+		}
+	}
+
+	if foundVal == nil {
+		return nil, fmt.Errorf("inject: couldn't find the dependency for %s", t.String())
+	}
+
+	return foundVal, nil
+}
+
+type dependency struct {
+	value        interface{}
+	reflectValue reflect.Value
+	reflectType  reflect.Type
 }

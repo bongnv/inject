@@ -1,6 +1,7 @@
 package inject
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -100,4 +101,94 @@ func Test_MustGet_no_panic(t *testing.T) {
 	require.NotPanics(t, func() {
 		require.EqualValues(t, 10, c.MustGet("mock-int"))
 	}, "it must panic as there is no request dep")
+}
+
+func Test_Register_factory_function(t *testing.T) {
+	t.Run("too-many-out-params", func(t *testing.T) {
+		c := New()
+		mockFunc := func() (int, int, error) {
+			return 0, 0, nil
+		}
+
+		err := c.Register("new-func", mockFunc)
+		require.EqualError(t, err, "inject: unsupported factory function")
+	})
+
+	t.Run("no-out-params", func(t *testing.T) {
+		c := New()
+		mockFunc := func() {}
+
+		err := c.Register("new-func", mockFunc)
+		require.EqualError(t, err, "inject: unsupported factory function")
+	})
+
+	t.Run("not-implements-error", func(t *testing.T) {
+		c := New()
+		mockFunc := func() (string, int) {
+			return "", 0
+		}
+
+		err := c.Register("new-func", mockFunc)
+		require.EqualError(t, err, "inject: 2nd output param must implement error")
+	})
+
+	t.Run("missing-dependency", func(t *testing.T) {
+		c := New()
+		mockFunc := func(v string) (int, error) {
+			return 0, nil
+		}
+
+		err := c.Register("int-dep", mockFunc)
+		require.EqualError(t, err, "inject: couldn't find the dependency for string")
+	})
+
+	t.Run("conflict-dependency", func(t *testing.T) {
+		c := New()
+		mockFunc := func(v string) (int, error) {
+			return 0, nil
+		}
+
+		c.MustRegister("string-dep-1", "dep-1")
+		c.MustRegister("string-dep-2", "dep-2")
+		err := c.Register("int-dep", mockFunc)
+		require.EqualError(t, err, "inject: there is a conflict when finding the dependency for string")
+	})
+
+	t.Run("error-with-factory-func", func(t *testing.T) {
+		c := New()
+		mockFunc := func(v string) (int, error) {
+			return 0, errors.New("random error")
+		}
+
+		c.MustRegister("string-dep-1", "dep-1")
+		err := c.Register("int-dep", mockFunc)
+		require.EqualError(t, err, "random error")
+	})
+
+	t.Run("happy-path-with-dependency", func(t *testing.T) {
+		c := New()
+		mockFunc := func(v string) (int, error) {
+			return 1, nil
+		}
+
+		c.MustRegister("string-dep-1", "dep-1")
+		err := c.Register("int-dep", mockFunc)
+		require.NoError(t, err)
+		require.NotPanics(t, func() {
+			require.EqualValues(t, 1, c.MustGet("int-dep"))
+		}, "int-dep must be registered")
+	})
+
+	t.Run("happy-path-without-dependency", func(t *testing.T) {
+		c := New()
+		mockFunc := func() (int, error) {
+			return 1, nil
+		}
+
+		err := c.Register("int-dep", mockFunc)
+		require.NoError(t, err)
+		require.NotPanics(t, func() {
+			require.EqualValues(t, 1, c.MustGet("int-dep"))
+		}, "int-dep must be registered")
+	})
 }
