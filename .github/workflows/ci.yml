@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - name: Set up Go ${{ matrix.go }}
-        uses: actions/setup-go@v1
+        uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
 
@@ -34,7 +34,7 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Checkout Code
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
         with:
           ref: ${{ github.ref }}
 
@@ -63,7 +63,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: 12
       - name: Release
