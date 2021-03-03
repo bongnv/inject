@@ -15,3 +15,36 @@ A dependency injection library for Go that supports:
 ```
 go get github.com/bongnv/inject
 ```
+
+## Usages
+
+The following example demonstrates the use of factory functions for registering dependencies:
+
+```go
+func loadAppConfig() *AppConfig {
+  // load app config here
+}
+
+func newLogger(cfg *AppConfig) (Logger, error) {
+  // initialize a logger
+  return &loggerImpl{}
+}
+
+// ServiceA has Logger as a dependency
+type ServiceA struct {
+  Logger Logger `inject:"logger"`
+}
+
+func newServiceA() (*ServiceA, error) {
+  // init your serviceA here
+}
+
+// init func
+func initDependencies() {
+  c := inject.New()
+  c.MustRegister("config", loadAppConfig)
+  c.MustRegister("logger", newLogger), 
+  // serviceA will created and registered, logger will also be injected
+  c.MustRegister("serviceA", newServiceA),
+}
+```
