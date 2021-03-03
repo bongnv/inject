@@ -6,13 +6,21 @@ import (
 	"reflect"
 )
 
-// Container contains all dependencies.
+// Container contains all dependencies. A dependency container can be created by New method.
 type Container struct {
 	dependencies map[string]*dependency
 }
 
-// Register registers new dependency with a name to the Container. name has to be unique.
-// It returns an error if name is not unique or it's unable to inject dependencies.
+// Register registers new dependency with a name to the Container. As name has to be unique,
+// it returns an error if name is not unique. An error is also returned if the function is unable to inject dependencies.
+// A factory function can be used:
+//
+// func newLogger() (Logger, error) {
+//   // initialize a new logger
+// }
+//
+// then we use c.Register("logger", newLogger) to register the logger dependency by a factory function.
+// dependencies are also injected to the newly created struct from the factory function.
 func (c *Container) Register(name string, dep interface{}) error {
 	if _, found := c.dependencies[name]; found {
 		return fmt.Errorf("inject: %s is already registered", name)
