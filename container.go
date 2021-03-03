@@ -19,7 +19,7 @@ type Container struct {
 //   // initialize a new logger
 // }
 //
-// then we use c.Register("logger", newLogger) to register the logger dependency by a factory function.
+// we then use c.Register("logger", newLogger) to register the logger dependency with that function.
 // dependencies are also injected to the newly created struct from the factory function.
 func (c *Container) Register(name string, dep interface{}) error {
 	if _, found := c.dependencies[name]; found {
