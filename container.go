@@ -96,13 +96,17 @@ func (c *Container) populate(dep *dependency) error {
 			continue
 		}
 
+		if fieldType.Kind() == reflect.Struct {
+			return fmt.Errorf("inject: %s is not assignable, a pointer is expected", fieldType)
+		}
+
 		loadedValue, found := c.dependencies[tagValue]
 		if !found {
 			return fmt.Errorf("inject: %s is not registered", tagValue)
 		}
 
 		if !loadedValue.reflectType.AssignableTo(fieldType) {
-			return fmt.Errorf("inject: %s is not assignable", tagValue)
+			return fmt.Errorf("inject: %s is not assignable from %s", fieldType, loadedValue.reflectType)
 		}
 
 		fieldValue.Set(loadedValue.reflectValue)
