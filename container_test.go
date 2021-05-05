@@ -210,11 +210,17 @@ func Test_Register_factory_function(t *testing.T) {
 	})
 }
 
-func Test_Test_Register_auto(t *testing.T) {
+func Test_Register_auto(t *testing.T) {
 	c := New()
 	c.MustRegister("mocked-int", 10)
 	d := &TypeD{}
 	err := c.Register("type-d", d)
 	require.NoError(t, err)
 	require.Equal(t, 10, d.Field, "data should be injected by type")
+}
+
+func Test_Register_reserved_name(t *testing.T) {
+	c := New()
+	err := c.Register("auto", 10)
+	require.EqualError(t, err, "inject: auto is revserved, please use a different name")
 }
