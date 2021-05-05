@@ -83,6 +83,10 @@ func (c *Container) MustGet(name string) interface{} {
 
 func (c *Container) populate(dep *dependency) error {
 	if !isStructPtr(dep.reflectType) {
+		if hasInjectTag(dep) {
+			return fmt.Errorf("inject: %s is not injectable, a pointer is expected", dep.reflectType)
+		}
+
 		return nil
 	}
 
@@ -102,7 +106,7 @@ func (c *Container) populate(dep *dependency) error {
 		}
 
 		if !loadedValue.reflectType.AssignableTo(fieldType) {
-			return fmt.Errorf("inject: %s is not assignable", tagValue)
+			return fmt.Errorf("inject: %s is not assignable from %s", fieldType, loadedValue.reflectType)
 		}
 
 		fieldValue.Set(loadedValue.reflectValue)

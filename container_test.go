@@ -15,6 +15,10 @@ type TypeB struct {
 	Field *TypeA `inject:"type-a"`
 }
 
+type TypeC struct {
+	Field TypeA `inject:"type-a"`
+}
+
 func Test_Register(t *testing.T) {
 	t.Run("happy-path", func(t *testing.T) {
 		c := New()
@@ -32,7 +36,16 @@ func Test_Register(t *testing.T) {
 		a := &TypeA{}
 		require.NoError(t, c.Register("mocked-int", "1000"))
 		err := c.Register("type-a", a)
-		require.EqualError(t, err, "inject: mocked-int is not assignable")
+		require.EqualError(t, err, "inject: int is not assignable from string")
+	})
+
+	t.Run("not-assignable-pointer-expected", func(t *testing.T) {
+		c := New()
+		a := &TypeA{}
+		require.NoError(t, c.Register("mocked-int", 1000))
+		require.NoError(t, c.Register("type-a", a))
+		err := c.Register("type-c", TypeC{})
+		require.EqualError(t, err, "inject: inject.TypeC is not injectable, a pointer is expected")
 	})
 
 	t.Run("missing-dependency", func(t *testing.T) {
