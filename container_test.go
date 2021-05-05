@@ -19,6 +19,10 @@ type TypeC struct {
 	Field TypeA `inject:"type-a"`
 }
 
+type TypeD struct {
+	Field int `inject:"auto"`
+}
+
 func Test_Register(t *testing.T) {
 	t.Run("happy-path", func(t *testing.T) {
 		c := New()
@@ -204,4 +208,19 @@ func Test_Register_factory_function(t *testing.T) {
 			require.EqualValues(t, 1, c.MustGet("int-dep"))
 		}, "int-dep must be registered")
 	})
+}
+
+func Test_Register_auto(t *testing.T) {
+	c := New()
+	c.MustRegister("mocked-int", 10)
+	d := &TypeD{}
+	err := c.Register("type-d", d)
+	require.NoError(t, err)
+	require.Equal(t, 10, d.Field, "data should be injected by type")
+}
+
+func Test_Register_reserved_name(t *testing.T) {
+	c := New()
+	err := c.Register("auto", 10)
+	require.EqualError(t, err, "inject: auto is revserved, please use a different name")
 }

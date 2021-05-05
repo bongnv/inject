@@ -6,6 +6,16 @@ import (
 	"reflect"
 )
 
+const (
+	autoInjectionTag = "auto"
+)
+
+type dependency struct {
+	value        interface{}
+	reflectValue reflect.Value
+	reflectType  reflect.Type
+}
+
 // Container contains all dependencies. A dependency container can be created by New method.
 type Container struct {
 	dependencies map[string]*dependency
@@ -24,6 +34,10 @@ type Container struct {
 func (c *Container) Register(name string, dep interface{}) error {
 	if _, found := c.dependencies[name]; found {
 		return fmt.Errorf("inject: %s is already registered", name)
+	}
+
+	if name == autoInjectionTag {
+		return fmt.Errorf("inject: %s is revserved, please use a different name", autoInjectionTag)
 	}
 
 	var toAddDep *dependency
@@ -100,19 +114,32 @@ func (c *Container) populate(dep *dependency) error {
 			continue
 		}
 
-		loadedValue, found := c.dependencies[tagValue]
-		if !found {
-			return fmt.Errorf("inject: %s is not registered", tagValue)
+		loadedDep, err := c.loadDepForTag(tagValue, fieldType)
+		if err != nil {
+			return err
 		}
 
-		if !loadedValue.reflectType.AssignableTo(fieldType) {
-			return fmt.Errorf("inject: %s is not assignable from %s", fieldType, loadedValue.reflectType)
+		if !loadedDep.reflectType.AssignableTo(fieldType) {
+			return fmt.Errorf("inject: %s is not assignable from %s", fieldType, loadedDep.reflectType)
 		}
 
-		fieldValue.Set(loadedValue.reflectValue)
+		fieldValue.Set(loadedDep.reflectValue)
 	}
 
 	return nil
+}
+
+func (c *Container) loadDepForTag(tag string, t reflect.Type) (*dependency, error) {
+	if tag == autoInjectionTag {
+		return c.findByType(t)
+	}
+
+	loadedDep, found := c.dependencies[tag]
+	if !found {
+		return nil, fmt.Errorf("inject: %s is not registered", tag)
+	}
+
+	return loadedDep, nil
 }
 
 func (c *Container) executeFunc(fn interface{}, fnType reflect.Type) (*dependency, error) {
@@ -175,10 +202,4 @@ func (c *Container) findByType(t reflect.Type) (*dependency, error) {
 	}
 
 	return foundVal, nil
-}
-
-type dependency struct {
-	value        interface{}
-	reflectValue reflect.Value
-	reflectType  reflect.Type
 }
