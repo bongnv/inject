@@ -44,8 +44,8 @@ func Test_Register(t *testing.T) {
 		a := &TypeA{}
 		require.NoError(t, c.Register("mocked-int", 1000))
 		require.NoError(t, c.Register("type-a", a))
-		err := c.Register("type-c", &TypeC{})
-		require.EqualError(t, err, "inject: inject.TypeA is not assignable, a pointer is expected")
+		err := c.Register("type-c", TypeC{})
+		require.EqualError(t, err, "inject: inject.TypeC is not injectable, a pointer is expected")
 	})
 
 	t.Run("missing-dependency", func(t *testing.T) {

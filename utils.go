@@ -1,6 +1,8 @@
 package inject
 
-import "reflect"
+import (
+	"reflect"
+)
 
 var (
 	reflectTypeOfError = reflect.TypeOf((*error)(nil)).Elem()
@@ -12,4 +14,19 @@ func isStructPtr(t reflect.Type) bool {
 
 func implementsError(t reflect.Type) bool {
 	return t.Implements(reflectTypeOfError)
+}
+
+func hasInjectTag(dep *dependency) bool {
+	if dep.reflectType.Kind() != reflect.Struct {
+		return false
+	}
+
+	for i := 0; i < dep.reflectValue.NumField(); i++ {
+		structField := dep.reflectType.Field(i)
+		if _, ok := structField.Tag.Lookup("inject"); ok {
+			return true
+		}
+	}
+
+	return false
 }
