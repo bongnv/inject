@@ -5,9 +5,12 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/bongnv/inject)](https://goreportcard.com/report/github.com/bongnv/inject)
 [![codecov](https://codecov.io/gh/bongnv/inject/branch/main/graph/badge.svg?token=RP3ua8huXh)](https://codecov.io/gh/bongnv/inject)
 
-A dependency injection library for Go that supports:
+`inject` is a reflect-based dependency injection library for Go.
+
+## Features
 
 - Registering and injecting dependencies by names
+- Injecting dependencies by types
 - Registering dependencies by factory functions
 
 ## Installation
@@ -18,7 +21,9 @@ go get github.com/bongnv/inject
 
 ## Usages
 
-The following example demonstrates the use of factory functions for registering dependencies:
+### Registering dependencies by factory functions
+
+`loadAppConfig`, `newLogger` and `newServiceA` are three factory functions to create different components. `inject` allows loading dependencies as well as registering dependencies created by those functions.
 
 ```go
 func loadAppConfig() *AppConfig {
@@ -44,7 +49,29 @@ func initDependencies() {
   c := inject.New()
   c.MustRegister("config", loadAppConfig)
   c.MustRegister("logger", newLogger), 
-  // serviceA will created and registered, logger will also be injected
+  // serviceA will be created and registered, logger will also be injected
   c.MustRegister("serviceA", newServiceA),
+}
+```
+
+### Injecting dependencies by types
+
+As `loggerImpl` satisfies the interface `Logger`, it will be injected into `ServiceA` automatically. If there are two dependencies that are eligible while injecting, an error will be returned.
+
+```go
+// loggerImpl is an implementation that satisfies Logger interface.
+type loggerImpl struct {}
+
+// ServiceA has Logger as a dependency
+type ServiceA struct {
+  Logger Logger `inject:"auto"`
+}
+
+// init func
+func initDependencies() {
+  c := inject.New()
+  c.MustRegister("logger", &loggerImpl{}), 
+  // serviceA will be registered, logger will also be injected by Logger type
+  c.MustRegister("serviceA", &ServiceA{}),
 }
 ```
