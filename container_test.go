@@ -253,3 +253,12 @@ func Test_MustUnnamed(t *testing.T) {
 		c.MustUnnamed(&TypeA{})
 	}, "There must be panic because of missing dependency")
 }
+
+func Test_Inject(t *testing.T) {
+	c := New()
+	require.NoError(t, c.Unnamed(10))
+
+	d := &TypeD{}
+	require.NoError(t, c.Inject(d), "there should be no error injecting dependencies")
+	require.Equal(t, 10, d.Field, "data should be injected")
+}

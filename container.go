@@ -119,6 +119,18 @@ func (c *Container) MustUnnamed(dep interface{}) {
 	}
 }
 
+// Inject injects dependencies to a given object. It returns error if there is any.
+// The object should be a pointer of struct, otherwise dependencies won't be injected.
+func (c *Container) Inject(object interface{}) error {
+	dep := &dependency{
+		value:        object,
+		reflectType:  reflect.TypeOf(object),
+		reflectValue: reflect.ValueOf(object),
+	}
+
+	return c.populate(dep)
+}
+
 func (c *Container) populate(dep *dependency) error {
 	if !isStructPtr(dep.reflectType) {
 		if hasInjectTag(dep) {
