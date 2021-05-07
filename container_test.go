@@ -224,3 +224,25 @@ func Test_Register_reserved_name(t *testing.T) {
 	err := c.Register("auto", 10)
 	require.EqualError(t, err, "inject: auto is revserved, please use a different name")
 }
+
+func Test_Unnamed(t *testing.T) {
+	c := New()
+	err := c.Unnamed(10)
+	require.NoError(t, err, "New dependency shouldn't registered")
+	require.Len(t, c.dependencies, 1)
+	require.NotNil(t, c.dependencies["unnamed.0"])
+	require.Equal(t, 0, c.unnamedCounter)
+}
+
+func Test_Unnamed_error(t *testing.T) {
+	c := New()
+	err := c.Unnamed(&TypeA{})
+	require.Error(t, err, "There should be error because of missing dependency")
+	require.Equal(t, 0, c.unnamedCounter)
+	require.NoError(t, c.Unnamed(10))
+	require.Len(t, c.dependencies, 1)
+	require.Equal(t, 0, c.unnamedCounter)
+	require.NotNil(t, c.dependencies["unnamed.0"], "Existing name should be reused")
+	require.NoError(t, c.Unnamed(11))
+	require.NotNil(t, c.dependencies["unnamed.1"], "New name should be created")
+}

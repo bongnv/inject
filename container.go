@@ -8,6 +8,7 @@ import (
 
 const (
 	autoInjectionTag = "auto"
+	unnamedPrefix    = "unnamed"
 )
 
 type dependency struct {
@@ -18,7 +19,8 @@ type dependency struct {
 
 // Container contains all dependencies. A dependency container can be created by New method.
 type Container struct {
-	dependencies map[string]*dependency
+	dependencies   map[string]*dependency
+	unnamedCounter int
 }
 
 // Register registers new dependency with a name to the Container. As name has to be unique,
@@ -93,6 +95,28 @@ func (c *Container) MustGet(name string) interface{} {
 	}
 
 	return dep
+}
+
+// Unnamed registers a new dependency without specifying the name.
+// It's handy for injecting by types. However, supporting by names won't be supported.
+// One must be careful when injecting by types as it can cause conflicts easily.
+func (c *Container) Unnamed(dep interface{}) error {
+	for {
+		newName := fmt.Sprintf("%s.%d", unnamedPrefix, c.unnamedCounter)
+		if _, ok := c.dependencies[newName]; ok {
+			c.unnamedCounter++
+			continue
+		}
+
+		return c.Register(newName, dep)
+	}
+}
+
+// MustUnnamed is similar to Unnamed. Instead of returning an error, it will panic if there is any error.
+func (c *Container) MustUnnamed(dep interface{}) {
+	if err := c.Unnamed(dep); err != nil {
+		panic(err)
+	}
 }
 
 func (c *Container) populate(dep *dependency) error {

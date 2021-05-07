@@ -58,6 +58,8 @@ func initDependencies() {
 
 As `loggerImpl` satisfies the interface `Logger`, it will be injected into `ServiceA` automatically. If there are two dependencies that are eligible while injecting, an error will be returned. `auto` is the keyword to indicate the type-based injection.
 
+`Unnamed` and `MustUnnamed` can be used to register dependencies if names is not used to identifying the dependency.
+
 ```go
 // loggerImpl is an implementation that satisfies Logger interface.
 type loggerImpl struct {}
