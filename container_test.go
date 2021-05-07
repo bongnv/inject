@@ -246,3 +246,10 @@ func Test_Unnamed_error(t *testing.T) {
 	require.NoError(t, c.Unnamed(11))
 	require.NotNil(t, c.dependencies["unnamed.1"], "New name should be created")
 }
+
+func Test_MustUnnamed(t *testing.T) {
+	c := New()
+	require.Panics(t, func() {
+		c.MustUnnamed(&TypeA{})
+	}, "There must be panic because of missing dependency")
+}
